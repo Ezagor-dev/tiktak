@@ -273,6 +273,9 @@ function checkParkingSuccess() {
   var taxiPathLength = path['taxi'].length;
   var miniTruckPathLength = path['mini_truck'].length;
 
+  // Define tolerance for parking area
+  var tolerance = 10; // Adjust this value as needed
+
   // Check if both cars have reached the end of their paths
   if (taxiPathLength > 0 && miniTruckPathLength > 0 &&
       taxi.x === path['taxi'][taxiPathLength - 1].x - taxi.width / 2 &&
@@ -282,10 +285,10 @@ function checkParkingSuccess() {
     // Check if both cars are parked correctly
     var taxiArea = parkingAreas['yellow'];
     var miniTruckArea = parkingAreas['blue'];
-    var taxiParked = taxi.x >= taxiArea.x && taxi.x + taxi.width <= taxiArea.x + taxiArea.width &&
-                     taxi.y >= taxiArea.y && taxi.y + taxi.height <= taxiArea.y + taxiArea.height;
-    var miniTruckParked = miniTruck.x >= miniTruckArea.x && miniTruck.x + miniTruck.width <= miniTruckArea.x + miniTruckArea.width &&
-                          miniTruck.y >= miniTruckArea.y && miniTruck.y + miniTruck.height <= miniTruckArea.y + miniTruckArea.height;
+    var taxiParked = taxi.x >= taxiArea.x - tolerance && taxi.x + taxi.width <= taxiArea.x + taxiArea.width + tolerance &&
+                     taxi.y >= taxiArea.y - tolerance && taxi.y + taxi.height <= taxiArea.y + taxiArea.height + tolerance;
+    var miniTruckParked = miniTruck.x >= miniTruckArea.x - tolerance && miniTruck.x + miniTruck.width <= miniTruckArea.x + miniTruckArea.width + tolerance &&
+                          miniTruck.y >= miniTruckArea.y - tolerance && miniTruck.y + miniTruck.height <= miniTruckArea.y + miniTruckArea.height + tolerance;
 
     if (taxiParked && miniTruckParked) {
       document.getElementById('status').innerText = 'Both cars parked successfully!';
@@ -303,6 +306,7 @@ function checkParkingSuccess() {
     }
   }
 }
+
 
 
 
