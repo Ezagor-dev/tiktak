@@ -29,21 +29,24 @@
     top: 40px; /* Position below the score message */
   }
   button {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 50px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #007BFF;
-    border: none;
-    color: white;
-  }
+  position: absolute;
+  bottom: 20px; /* Position buttons at the bottom of the screen */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #007BFF;
+  border: none;
+  color: white;
+  margin: 0 5px; /* Spacing between buttons */
+}
+#goButton {
+  bottom: 70px; /* Position the 'Go!' button slightly above the 'Try Again' button */
+}
   #tryAgainButton {
-    margin-top: 90px;
-  }
+  bottom: 20px; /* Position the 'Try Again' button at the very bottom */
+}
 </style>
 </head>
 <body>
