@@ -97,31 +97,24 @@
     canvas.addEventListener('touchcancel', handleEnd);
   }
 
-  canvas.addEventListener('mousedown', function(e) {
-    // Determine which car is active based on click proximity
-    Object.keys(cars).forEach(function(key) {
-      var car = cars[key];
-      if (e.offsetX >= car.x && e.offsetX <= car.x + car.width &&
-          e.offsetY >= car.y && e.offsetY <= car.y + car.height) {
-        activeCar = key;
-        startDrawing(e, car.pathColor);
-      }
-    });
-  });
 
-  function handleStart(e) {
-    if (e.touches) e = e.touches[0];
-    Object.keys(cars).forEach(function(key) {
-      var car = cars[key];
-      if ((e.clientX - canvas.offsetLeft) >= car.x && (e.clientX - canvas.offsetLeft) <= car.x + car.width &&
-          (e.clientY - canvas.offsetTop) >= car.y && (e.clientY - canvas.offsetTop) <= car.y + car.height) {
-        activeCar = key;
-        startDrawing(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop, car.pathColor);
-      }
-    });
-  }
 
-  
+function handleStart(e) {
+    e.preventDefault(); // Prevent default behavior for both touch and mouse events
+    var point = e.touches ? e.touches[0] : e; // Normalize point for touch or mouse
+    Object.keys(cars).forEach(function(key) {
+        var car = cars[key];
+        var offsetX = point.clientX - canvas.getBoundingClientRect().left;
+        var offsetY = point.clientY - canvas.getBoundingClientRect().top;
+        if (offsetX >= car.x && offsetX <= car.x + car.width &&
+            offsetY >= car.y && offsetY <= car.y + car.height) {
+            activeCar = key;
+            startDrawing(offsetX, offsetY, car.pathColor);
+        }
+    });
+}
+
+
   canvas.addEventListener('mouseup', stopDrawing);
   canvas.addEventListener('mousemove', draw);
  document.getElementById('goButton').addEventListener('click', function() {
@@ -232,18 +225,20 @@ function checkCarCollision(carKey) {
       ctx.drawImage(coinImage, coin.x - coin.radius, coin.y - coin.radius, coin.radius * 2, coin.radius * 2);
     });
   }
- function handleMove(e) {
-    if (activeCar === null) return;
-    if (e.touches) e = e.touches[0];
-    draw(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-  }
+function handleMove(e) {
+    e.preventDefault(); // Prevent default behavior for both touch and mouse events
+    if (!activeCar) return; // Exit if no car is active
+    var point = e.touches ? e.touches[0] : e;
+    var offsetX = point.clientX - canvas.getBoundingClientRect().left;
+    var offsetY = point.clientY - canvas.getBoundingClientRect().top;
+    draw(offsetX, offsetY);
+}
 
   function handleEnd(e) {
-    if (activeCar !== null) {
-      stopDrawing();
-      activeCar = null;
-    }
-  }
+    e.preventDefault(); // Prevent default behavior for both touch and mouse events
+    stopDrawing();
+    activeCar = null;
+}
   function startDrawing(x, y, color) {
     ctx.beginPath();
     ctx.moveTo(x, y);
