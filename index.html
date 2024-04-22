@@ -27,7 +27,7 @@
   }
   #status {
     top: 30px; /* Position below the score message */
-    font-size: 6px;
+    font-size: 8px;
   }
  #message {
   position: absolute;
@@ -171,7 +171,7 @@ function handleStart(e) {
       }
       // Check for collision with other cars
       if (checkCarCollision('taxi')) {
-        document.getElementById('status').innerText = 'Cars collided! Try Again.';
+        document.getElementById('status').innerText = 'Cars collided!';
         return;
       }
       i++;
@@ -199,7 +199,7 @@ function moveTruckAlongPath() {
       }
       // Check for collision with other cars
       if (checkCarCollision('mini_truck')) {
-        document.getElementById('status').innerText = 'Cars collided! Try Again.';
+        document.getElementById('status').innerText = 'Cars collided!';
         return;
       }
       i++;
@@ -345,7 +345,7 @@ function checkParkingSuccess() {
                           miniTruck.y >= miniTruckArea.y - tolerance && miniTruck.y + miniTruck.height <= miniTruckArea.y + miniTruckArea.height + tolerance;
 
     if (taxiParked && miniTruckParked) {
-      document.getElementById('status').innerText = 'Both cars parked successfully!';
+      document.getElementById('status').innerText = 'Parked successfully!';
     } else {
       // Check if at least one car failed to park
       var statusMessage = '';
@@ -355,7 +355,7 @@ function checkParkingSuccess() {
       if (!miniTruckParked) {
         statusMessage += 'Mini Truck ';
       }
-      statusMessage += 'failed to park correctly. Try Again!';
+      statusMessage += 'failed to park correctly!';
       document.getElementById('status').innerText = statusMessage;
     }
   }
