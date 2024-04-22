@@ -17,7 +17,6 @@
   }
   canvas {
     border: 1px solid #fff;
-    background-color: #3C5B6F; /* Light gray background, resembling a road */
   }
   #message, #status {
     position: absolute;
@@ -57,41 +56,144 @@
 <script>
   var canvas = document.getElementById('gameCanvas');
   var ctx = canvas.getContext('2d');
-  var path = [];
+  var activeCar = null; // Determines which car is currently being drawn
+  var path = { 'taxi': [], 'mini_truck': [] };
   var score = 0;
   var carImage = new Image();
-  carImage.src = 'taxi.png'; // Load taxi image
+  carImage.src = 'taxi_1.png';
+  var truckImage = new Image();
+  truckImage.src = 'Mini_truck_1.png';
   var parkingAreaImage = new Image();
-  parkingAreaImage.src = 'ParkYellow.png'; // Load parking area image
+  parkingAreaImage.src = 'ParkYellow.png';
+  var parkingBlueImage = new Image();
+  parkingBlueImage.src = 'ParkBlue.png';
   var coinImage = new Image();
-  coinImage.src = 'coin.png'; // Load coin image
-  var car = { x: 175, y: 500, width: 100, height: 100 };
-  var parkingArea = { x: 175, y: 10, width: 75, height: 100 };
+  coinImage.src = 'coin.png';
+  var cars = {
+    'taxi': { image: carImage, x: 175, y: 500, width: 50, height: 91, pathColor: 'gold' },
+    'mini_truck': { image: truckImage, x: 75, y: 500, width: 50, height: 91, pathColor: 'blue' }
+  };
+  var parkingAreas = {
+    'yellow': { image: parkingAreaImage, x: 75, y: 10, width: 75, height: 100 },
+    'blue': { image: parkingBlueImage, x: 175, y: 10, width: 75, height: 100 }
+  };
   var coins = [
+      { x: 100, y: 300, radius: 15 },
+      { x: 100, y: 200, radius: 15 },
       { x: 200, y: 300, radius: 15 },
-      { x: 200, y: 200, radius: 15 }
+      { x: 200, y: 200, radius: 15 },
     ];
 
-  canvas.addEventListener('mousedown', startDrawing);
+  canvas.addEventListener('mousedown', function(e) {
+    // Determine which car is active based on click proximity
+    Object.keys(cars).forEach(function(key) {
+      var car = cars[key];
+      if (e.offsetX >= car.x && e.offsetX <= car.x + car.width &&
+          e.offsetY >= car.y && e.offsetY <= car.y + car.height) {
+        activeCar = key;
+        startDrawing(e, car.pathColor);
+      }
+    });
+  });
   canvas.addEventListener('mouseup', stopDrawing);
   canvas.addEventListener('mousemove', draw);
-  document.getElementById('goButton').addEventListener('click', moveCarAlongPath);
+ document.getElementById('goButton').addEventListener('click', function() {
+  moveTaxiAlongPath();
+  moveTruckAlongPath();
+});
   document.getElementById('tryAgainButton').addEventListener('click', resetGame);
 
-  function drawParkingArea() {
-    if (!parkingAreaImage.complete) {
-        setTimeout(drawParkingArea, 50); // Retry until image is loaded
+  function drawParkingAreas() {
+    Object.values(parkingAreas).forEach(function(area) {
+      if (!area.image.complete) {
+        setTimeout(drawParkingAreas, 50); // Retry until image is loaded
         return;
-    }
-    ctx.drawImage(parkingAreaImage, parkingArea.x, parkingArea.y, parkingArea.width, parkingArea.height);
+      }
+      ctx.drawImage(area.image, area.x, area.y, area.width, area.height);
+    });
   }
-
-  function drawCar() {
-    if (!carImage.complete) {
-        setTimeout(drawCar, 50);
+  function moveTaxiAlongPath() {
+  let i = 0;
+  function move() {
+    if (i < path['taxi'].length) {
+      var car = cars['taxi'];
+      car.x = path['taxi'][i].x - car.width / 2;
+      car.y = path['taxi'][i].y - car.height / 2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawParkingAreas();
+      redrawPath('taxi');
+      drawCars();
+      drawCoins();
+      checkCoinCollision();
+      if (i === path['taxi'].length - 1) {
+        checkParkingSuccess('taxi');
+      }
+      // Check for collision with other cars
+      if (checkCarCollision('taxi')) {
+        document.getElementById('status').innerText = 'Cars collided! Try Again.';
         return;
+      }
+      i++;
+      requestAnimationFrame(move);
     }
-    ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
+  }
+  move();
+}
+
+function moveTruckAlongPath() {
+  let i = 0;
+  function move() {
+    if (i < path['mini_truck'].length) {
+      var car = cars['mini_truck'];
+      car.x = path['mini_truck'][i].x - car.width / 2;
+      car.y = path['mini_truck'][i].y - car.height / 2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawParkingAreas();
+      redrawPath('mini_truck');
+      drawCars();
+      drawCoins();
+      checkCoinCollision();
+      if (i === path['mini_truck'].length - 1) {
+        checkParkingSuccess('mini_truck');
+      }
+      // Check for collision with other cars
+      if (checkCarCollision('mini_truck')) {
+        document.getElementById('status').innerText = 'Cars collided! Try Again.';
+        return;
+      }
+      i++;
+      requestAnimationFrame(move);
+    }
+  }
+  move();
+}
+
+function checkCarCollision(carKey) {
+  var currentCar = cars[carKey];
+  for (var key in cars) {
+    if (key !== carKey) {
+      var otherCar = cars[key];
+      if (
+        currentCar.x < otherCar.x + otherCar.width &&
+        currentCar.x + currentCar.width > otherCar.x &&
+        currentCar.y < otherCar.y + otherCar.height &&
+        currentCar.y + currentCar.height > otherCar.y
+      ) {
+        return true; // Collision detected
+      }
+    }
+  }
+  return false; // No collision detected
+}
+
+  function drawCars() {
+    Object.values(cars).forEach(function(car) {
+      if (!car.image.complete) {
+        setTimeout(drawCars, 50); // Retry until image is loaded
+        return;
+      }
+      ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
+    });
   }
 
   function drawCoins() {
@@ -104,49 +206,55 @@
     });
   }
 
-  function startDrawing(e) {
+  function startDrawing(e, color) {
     ctx.beginPath();
     ctx.moveTo(e.offsetX, e.offsetY);
-    ctx.strokeStyle = 'gold';
+    ctx.strokeStyle = color;
     ctx.lineWidth = 5;
-    path.push({ x: e.offsetX, y: e.offsetY });
+    path[activeCar].push({ x: e.offsetX, y: e.offsetY });
   }
 
   function draw(e) {
-    if (e.buttons !== 1) return;
+    if (e.buttons !== 1 || activeCar === null) return;
     ctx.lineTo(e.offsetX, e.offsetY);
     ctx.stroke();
-    path.push({ x: e.offsetX, y: e.offsetY });
+    path[activeCar].push({ x: e.offsetX, y: e.offsetY });
   }
 
   function stopDrawing() {
     ctx.closePath();
+    activeCar = null; // Reset active car after drawing
   }
 
   function moveCarAlongPath() {
-    let i = 0;
-    function move() {
-      if (i < path.length) {
-        car.x = path[i].x - car.width / 2;
-        car.y = path[i].y - car.height / 2;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawParkingArea();
-        redrawPath();
-        drawCar();
-        drawCoins();
-        checkCoinCollision();
-        if (i === path.length - 1) {
-          checkParkingSuccess();
+    Object.keys(cars).forEach(function(key) {
+      let i = 0;
+      function move() {
+        if (i < path[key].length) {
+          var car = cars[key];
+          car.x = path[key][i].x - car.width / 2;
+          car.y = path[key][i].y - car.height / 2;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          drawParkingAreas();
+          redrawPath(key);
+          drawCars();
+          drawCoins();
+          checkCoinCollision();
+          if (i === path[key].length - 1) {
+            checkParkingSuccess(key);
+          }
+          i++;
+          requestAnimationFrame(move);
         }
-        i++;
-        requestAnimationFrame(move);
       }
-    }
-    move();
+      move();
+    });
   }
 
-  function checkCoinCollision() {
+ function checkCoinCollision() {
+  Object.keys(cars).forEach(function(key) {
     coins = coins.filter(coin => {
+      const car = cars[key]; // Define car here
       const dist = Math.sqrt((car.x + car.width / 2 - coin.x) ** 2 + (car.y + car.height / 2 - coin.y) ** 2);
       if (dist < coin.radius + Math.max(car.width, car.height) / 2) {
         score += 250;
@@ -155,45 +263,81 @@
       }
       return true;
     });
-  }
+  });
+}
 
-  function checkParkingSuccess() {
-    if (car.x < parkingArea.x + parkingArea.width &&
-        car.x + car.width > parkingArea.x &&
-        car.y < parkingArea.y + parkingArea.height &&
-        car.y + car.height > parkingArea.y) {
-      document.getElementById('status').innerText = 'Successfully Parked!';
+
+function checkParkingSuccess() {
+  var taxi = cars['taxi'];
+  var miniTruck = cars['mini_truck'];
+  var taxiPathLength = path['taxi'].length;
+  var miniTruckPathLength = path['mini_truck'].length;
+
+  // Check if both cars have reached the end of their paths
+  if (taxiPathLength > 0 && miniTruckPathLength > 0 &&
+      taxi.x === path['taxi'][taxiPathLength - 1].x - taxi.width / 2 &&
+      taxi.y === path['taxi'][taxiPathLength - 1].y - taxi.height / 2 &&
+      miniTruck.x === path['mini_truck'][miniTruckPathLength - 1].x - miniTruck.width / 2 &&
+      miniTruck.y === path['mini_truck'][miniTruckPathLength - 1].y - miniTruck.height / 2) {
+    // Check if both cars are parked correctly
+    var taxiArea = parkingAreas['yellow'];
+    var miniTruckArea = parkingAreas['blue'];
+    var taxiParked = taxi.x >= taxiArea.x && taxi.x + taxi.width <= taxiArea.x + taxiArea.width &&
+                     taxi.y >= taxiArea.y && taxi.y + taxi.height <= taxiArea.y + taxiArea.height;
+    var miniTruckParked = miniTruck.x >= miniTruckArea.x && miniTruck.x + miniTruck.width <= miniTruckArea.x + miniTruckArea.width &&
+                          miniTruck.y >= miniTruckArea.y && miniTruck.y + miniTruck.height <= miniTruckArea.y + miniTruckArea.height;
+
+    if (taxiParked && miniTruckParked) {
+      document.getElementById('status').innerText = 'Both cars parked successfully!';
     } else {
-      document.getElementById('status').innerText = 'Try Again!';
+      // Check if at least one car failed to park
+      var statusMessage = '';
+      if (!taxiParked) {
+        statusMessage += 'Taxi ';
+      }
+      if (!miniTruckParked) {
+        statusMessage += 'Mini Truck ';
+      }
+      statusMessage += 'failed to park correctly. Try Again!';
+      document.getElementById('status').innerText = statusMessage;
     }
   }
+}
+
+
+
 
   function updateScore() {
     document.getElementById('message').innerText = 'Score: ' + score + ' MB';
   }
 
   function resetGame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    path = [];
-    score = 0;
-    car.x = 175;
-    car.y = 500;
-    coins = [
-      { x: 200, y: 300, radius: 15 },
-      { x: 200, y: 200, radius: 15 }
-    ];
-    updateScore();
-    document.getElementById('status').innerText = ''; // Clear status message on reset
-    init();
-  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  path = { 'taxi': [], 'mini_truck': [] };
+  score = 0;
+  cars['taxi'].x = 175;
+  cars['taxi'].y = 500;
+  cars['mini_truck'].x = 75;
+  cars['mini_truck'].y = 500;
+  coins = [
+    { x: 100, y: 300, radius: 15 },
+    { x: 100, y: 200, radius: 15 },
+    { x: 200, y: 300, radius: 15 },
+    { x: 200, y: 200, radius: 15 },
+  ];
+  updateScore();
+  document.getElementById('status').innerText = ''; // Clear status message on reset
+  init();
+}
 
-  function redrawPath() {
-    if (path.length === 0) return;
+  function redrawPath(key) {
+    var carPath = path[key];
+    if (carPath.length === 0) return;
     ctx.beginPath();
-    ctx.moveTo(path[0].x, path[0].y);
-    ctx.strokeStyle = 'gold';
+    ctx.moveTo(carPath[0].x, carPath[0].y);
+    ctx.strokeStyle = cars[key].pathColor;
     ctx.lineWidth = 5;
-    for (let p of path) {
+    for (let p of carPath) {
         ctx.lineTo(p.x, p.y);
     }
     ctx.stroke();
@@ -201,8 +345,8 @@
   }
 
   function init() {
-    drawParkingArea();
-    drawCar();
+    drawParkingAreas();
+    drawCars();
     drawCoins();
   }
 
