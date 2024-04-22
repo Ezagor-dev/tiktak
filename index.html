@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parking Game</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #333;
+    color: white;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    border: 1px solid #fff;
+    background-color: #3C5B6F; /* Light gray background, resembling a road */
+  }
+  #message, #status {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+  }
+  #status {
+    top: 40px; /* Position below the score message */
+  }
+  button {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 50px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #007BFF;
+    border: none;
+    color: white;
+  }
+  #tryAgainButton {
+    margin-top: 90px;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<div id="message">Score: 0 MB</div>
+<div id="status"></div>
+<button id="goButton">Go!</button>
+<button id="tryAgainButton">Try Again</button>
+
+<script>
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d');
+  var path = [];
+  var score = 0;
+  var carImage = new Image();
+  carImage.src = 'taxi.png'; // Load taxi image
+  var parkingAreaImage = new Image();
+  parkingAreaImage.src = 'ParkYellow.png'; // Load parking area image
+  var coinImage = new Image();
+  coinImage.src = 'coin.png'; // Load coin image
+  var car = { x: 175, y: 500, width: 100, height: 100 };
+  var parkingArea = { x: 175, y: 10, width: 75, height: 100 };
+  var coins = [
+      { x: 200, y: 300, radius: 15 },
+      { x: 200, y: 200, radius: 15 }
+    ];
+
+  canvas.addEventListener('mousedown', startDrawing);
+  canvas.addEventListener('mouseup', stopDrawing);
+  canvas.addEventListener('mousemove', draw);
+  document.getElementById('goButton').addEventListener('click', moveCarAlongPath);
+  document.getElementById('tryAgainButton').addEventListener('click', resetGame);
+
+  function drawParkingArea() {
+    if (!parkingAreaImage.complete) {
+        setTimeout(drawParkingArea, 50); // Retry until image is loaded
+        return;
+    }
+    ctx.drawImage(parkingAreaImage, parkingArea.x, parkingArea.y, parkingArea.width, parkingArea.height);
+  }
+
+  function drawCar() {
+    if (!carImage.complete) {
+        setTimeout(drawCar, 50);
+        return;
+    }
+    ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
+  }
+
+  function drawCoins() {
+    if (!coinImage.complete) {
+        setTimeout(drawCoins, 50); // Retry until image is loaded
+        return;
+    }
+    coins.forEach(coin => {
+      ctx.drawImage(coinImage, coin.x - coin.radius, coin.y - coin.radius, coin.radius * 2, coin.radius * 2);
+    });
+  }
+
+  function startDrawing(e) {
+    ctx.beginPath();
+    ctx.moveTo(e.offsetX, e.offsetY);
+    ctx.strokeStyle = 'gold';
+    ctx.lineWidth = 5;
+    path.push({ x: e.offsetX, y: e.offsetY });
+  }
+
+  function draw(e) {
+    if (e.buttons !== 1) return;
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+    path.push({ x: e.offsetX, y: e.offsetY });
+  }
+
+  function stopDrawing() {
+    ctx.closePath();
+  }
+
+  function moveCarAlongPath() {
+    let i = 0;
+    function move() {
+      if (i < path.length) {
+        car.x = path[i].x - car.width / 2;
+        car.y = path[i].y - car.height / 2;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawParkingArea();
+        redrawPath();
+        drawCar();
+        drawCoins();
+        checkCoinCollision();
+        if (i === path.length - 1) {
+          checkParkingSuccess();
+        }
+        i++;
+        requestAnimationFrame(move);
+      }
+    }
+    move();
+  }
+
+  function checkCoinCollision() {
+    coins = coins.filter(coin => {
+      const dist = Math.sqrt((car.x + car.width / 2 - coin.x) ** 2 + (car.y + car.height / 2 - coin.y) ** 2);
+      if (dist < coin.radius + Math.max(car.width, car.height) / 2) {
+        score += 250;
+        updateScore();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function checkParkingSuccess() {
+    if (car.x < parkingArea.x + parkingArea.width &&
+        car.x + car.width > parkingArea.x &&
+        car.y < parkingArea.y + parkingArea.height &&
+        car.y + car.height > parkingArea.y) {
+      document.getElementById('status').innerText = 'Successfully Parked!';
+    } else {
+      document.getElementById('status').innerText = 'Try Again!';
+    }
+  }
+
+  function updateScore() {
+    document.getElementById('message').innerText = 'Score: ' + score + ' MB';
+  }
+
+  function resetGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    path = [];
+    score = 0;
+    car.x = 175;
+    car.y = 500;
+    coins = [
+      { x: 200, y: 300, radius: 15 },
+      { x: 200, y: 200, radius: 15 }
+    ];
+    updateScore();
+    document.getElementById('status').innerText = ''; // Clear status message on reset
+    init();
+  }
+
+  function redrawPath() {
+    if (path.length === 0) return;
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    ctx.strokeStyle = 'gold';
+    ctx.lineWidth = 5;
+    for (let p of path) {
+        ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.closePath();
+  }
+
+  function init() {
+    drawParkingArea();
+    drawCar();
+    drawCoins();
+  }
+
+  init();
+</script>
+</body>
+</html>
