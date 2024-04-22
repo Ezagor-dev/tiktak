@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Parking Game</title>
 <style>
   body {
@@ -84,6 +84,19 @@
       { x: 200, y: 200, radius: 15 },
     ];
 
+// Handling both mouse and touch inputs
+  function addInputListeners() {
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleEnd);
+    canvas.addEventListener('mouseleave', handleEnd);
+
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    canvas.addEventListener('touchmove', handleMove, { passive: false });
+    canvas.addEventListener('touchend', handleEnd);
+    canvas.addEventListener('touchcancel', handleEnd);
+  }
+
   canvas.addEventListener('mousedown', function(e) {
     // Determine which car is active based on click proximity
     Object.keys(cars).forEach(function(key) {
@@ -95,6 +108,20 @@
       }
     });
   });
+
+  function handleStart(e) {
+    if (e.touches) e = e.touches[0];
+    Object.keys(cars).forEach(function(key) {
+      var car = cars[key];
+      if ((e.clientX - canvas.offsetLeft) >= car.x && (e.clientX - canvas.offsetLeft) <= car.x + car.width &&
+          (e.clientY - canvas.offsetTop) >= car.y && (e.clientY - canvas.offsetTop) <= car.y + car.height) {
+        activeCar = key;
+        startDrawing(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop, car.pathColor);
+      }
+    });
+  }
+
+  
   canvas.addEventListener('mouseup', stopDrawing);
   canvas.addEventListener('mousemove', draw);
  document.getElementById('goButton').addEventListener('click', function() {
@@ -205,20 +232,31 @@ function checkCarCollision(carKey) {
       ctx.drawImage(coinImage, coin.x - coin.radius, coin.y - coin.radius, coin.radius * 2, coin.radius * 2);
     });
   }
-
-  function startDrawing(e, color) {
-    ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 5;
-    path[activeCar].push({ x: e.offsetX, y: e.offsetY });
+ function handleMove(e) {
+    if (activeCar === null) return;
+    if (e.touches) e = e.touches[0];
+    draw(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
   }
 
-  function draw(e) {
-    if (e.buttons !== 1 || activeCar === null) return;
-    ctx.lineTo(e.offsetX, e.offsetY);
+  function handleEnd(e) {
+    if (activeCar !== null) {
+      stopDrawing();
+      activeCar = null;
+    }
+  }
+  function startDrawing(x, y, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 5;
+    path[activeCar].push({ x: x, y: y });
+  }
+
+  function draw(x, y) {
+    if (activeCar === null) return;
+    ctx.lineTo(x, y);
     ctx.stroke();
-    path[activeCar].push({ x: e.offsetX, y: e.offsetY });
+    path[activeCar].push({ x: x, y: y });
   }
 
   function stopDrawing() {
@@ -349,6 +387,7 @@ function checkParkingSuccess() {
   }
 
   function init() {
+    addInputListeners();
     drawParkingAreas();
     drawCars();
     drawCoins();
