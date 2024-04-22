@@ -28,25 +28,38 @@
   #status {
     top: 40px; /* Position below the score message */
   }
-  button {
+ #message {
   position: absolute;
-  bottom: 20px; /* Position buttons at the bottom of the screen */
+  top: 30px;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 10;
+  color: white;
+}
+
+button {
+  position: absolute;
+  top: 20px;
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
   background-color: #007BFF;
   border: none;
   color: white;
-  margin: 0 5px; /* Spacing between buttons */
 }
+
 #goButton {
-  bottom: 70px; /* Position the 'Go!' button slightly above the 'Try Again' button */
+  right: 30%; /* Position the 'Go!' button to the right of the center */
+  margin-right: 60px; /* Adjust the margin to position it next to the score */
+  transform: translateX(50%); /* Adjust for the button's own size */
 }
-  #tryAgainButton {
-  bottom: 20px; /* Position the 'Try Again' button at the very bottom */
+
+#tryAgainButton {
+  left: 30%; /* Position the 'Try Again' button to the left of the center */
+  margin-left: 60px; /* Adjust the margin to position it next to the score */
+  transform: translateX(-50%); /* Adjust for the button's own size */
 }
+
 </style>
 </head>
 <body>
